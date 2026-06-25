@@ -1,0 +1,16 @@
+﻿services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: quick_volta
+      POSTGRES_PASSWORD: quick_volta
+      POSTGRES_DB: quick_volta
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./.postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quick_volta -d quick_volta"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
