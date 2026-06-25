@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Upload, Download, Info, Check, AlertTriangle, Database, Sparkles } from 'lucide-react';
 import { type Card } from '../services/cardRepository';
 import { useCsvImportExport } from '../hooks/useCsvImportExport';
 import { loadAiSettings, saveAiSettings, type AiSettings } from '../services/aiSettings';
+import { fetchAiModels } from '../services/aiModels';
 
 interface SettingsProps {
   cards: Card[];
@@ -11,8 +12,12 @@ interface SettingsProps {
 
 export function Settings({ cards, onImportSuccess }: SettingsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modelRequestRef = useRef(0);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [aiSettings, setAiSettings] = useState<AiSettings>(() => loadAiSettings());
+  const [aiModels, setAiModels] = useState<string[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelsMessage, setModelsMessage] = useState('');
 
   const {
     parseAndPreviewCsv,
@@ -30,6 +35,64 @@ export function Settings({ cards, onImportSuccess }: SettingsProps) {
     const next = saveAiSettings(patch);
     setAiSettings(next);
   };
+
+  const loadModels = useCallback(async (settings: Pick<AiSettings, 'baseUrl' | 'apiKey'>) => {
+    const requestId = modelRequestRef.current + 1;
+    modelRequestRef.current = requestId;
+
+    if (!settings.baseUrl.trim() || !settings.apiKey.trim()) {
+      setAiModels([]);
+      setModelsLoading(false);
+      setModelsMessage('');
+      return;
+    }
+
+    setModelsLoading(true);
+    setModelsMessage('Loading models...');
+
+    try {
+      const models = await fetchAiModels({ ...loadAiSettings(), baseUrl: settings.baseUrl, apiKey: settings.apiKey });
+      if (modelRequestRef.current !== requestId) return;
+
+      const nextModels = Array.isArray(models) ? models : [];
+      setAiModels(nextModels);
+      setModelsMessage(`Loaded ${nextModels.length} models.`);
+    } catch (err) {
+      if (modelRequestRef.current !== requestId) return;
+
+      setAiModels([]);
+      setModelsMessage(err instanceof Error ? err.message : 'Failed to load models.');
+    } finally {
+      if (modelRequestRef.current === requestId) {
+        setModelsLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const settingsForModelLoad = {
+      baseUrl: aiSettings.baseUrl,
+      apiKey: aiSettings.apiKey,
+    };
+
+    const timeoutId = window.setTimeout(() => {
+      void loadModels(settingsForModelLoad);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [aiSettings.baseUrl, aiSettings.apiKey, loadModels]);
+
+  const modelOptions = useMemo(() => {
+    const currentModel = aiSettings.model.trim();
+    if (!currentModel || aiModels.includes(currentModel)) {
+      return aiModels.map((model) => ({ label: model, value: model }));
+    }
+
+    return [
+      { label: `${currentModel} (custom)`, value: currentModel },
+      ...aiModels.map((model) => ({ label: model, value: model })),
+    ];
+  }, [aiModels, aiSettings.model]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -130,16 +193,49 @@ export function Settings({ cards, onImportSuccess }: SettingsProps) {
             />
           </label>
 
-          <label className="settings-field-row">
-            <span>Model</span>
-            <input
-              className="form-input"
-              type="text"
-              value={aiSettings.model}
-              onChange={(e) => updateAiSettings({ model: e.target.value })}
-              aria-label="Model"
-            />
-          </label>
+          <div className="settings-model-picker">
+            <div className="settings-model-header-row">
+              <span>Model</span>
+              <button
+                className="btn btn-secondary settings-refresh-models-btn"
+                type="button"
+                onClick={() => void loadModels(aiSettings)}
+                disabled={modelsLoading}
+              >
+                Refresh Models
+              </button>
+            </div>
+            <div className="settings-model-select-row">
+              <select
+                className="form-input"
+                value={aiSettings.model}
+                onChange={(e) => updateAiSettings({ model: e.target.value })}
+                aria-label="Model"
+              >
+                {modelOptions.map((model) => (
+                  <option key={model.value} value={model.value}>
+                    {model.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <label className="settings-field-row">
+              <span>Custom model</span>
+              <input
+                className="form-input"
+                type="text"
+                value={aiSettings.model}
+                onChange={(e) => updateAiSettings({ model: e.target.value })}
+                aria-label="Custom model"
+                placeholder="Type a model ID"
+              />
+            </label>
+            {modelsMessage && (
+              <div className={modelsMessage.startsWith('Loaded') || modelsMessage.startsWith('Loading') ? 'settings-model-status' : 'settings-model-error'}>
+                {modelsMessage}
+              </div>
+            )}
+          </div>
 
           <label className="settings-field-row">
             <span>Output Language</span>

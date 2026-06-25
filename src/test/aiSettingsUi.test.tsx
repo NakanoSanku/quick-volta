@@ -3,9 +3,17 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Settings } from '../components/Settings';
 import { loadAiSettings, saveAiSettings } from '../services/aiSettings';
+import { fetchAiModels } from '../services/aiModels';
+
+vi.mock('../services/aiModels', () => ({
+  fetchAiModels: vi.fn(),
+}));
 
 describe('AI settings UI', () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    vi.mocked(fetchAiModels).mockReset();
+  });
 
   it('renders default AI generation settings', () => {
     render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
@@ -24,8 +32,8 @@ describe('AI settings UI', () => {
     await user.clear(screen.getByLabelText('Base URL'));
     await user.type(screen.getByLabelText('Base URL'), 'http://localhost:11434/v1');
     await user.type(screen.getByLabelText('API Key'), 'secret-key');
-    await user.clear(screen.getByLabelText('Model'));
-    await user.type(screen.getByLabelText('Model'), 'local-model');
+    await user.clear(screen.getByLabelText('Custom model'));
+    await user.type(screen.getByLabelText('Custom model'), 'local-model');
     await user.clear(screen.getByLabelText('Output Language'));
     await user.type(screen.getByLabelText('Output Language'), 'English');
     await user.clear(screen.getByLabelText('Example Count'));
@@ -47,5 +55,82 @@ describe('AI settings UI', () => {
     expect(screen.getByLabelText('API Key')).toHaveValue('saved-key');
     expect(screen.getByLabelText('Output Language')).toHaveValue('Thai');
     expect(screen.getByLabelText('Example Count')).toHaveValue(2);
+  });
+
+  it('auto-loads models when base URL and API key are saved', async () => {
+    vi.mocked(fetchAiModels).mockResolvedValue(['gpt-a', 'gpt-b']);
+    saveAiSettings({ apiKey: 'saved-key', model: 'gpt-a' });
+
+    render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
+
+    expect(await screen.findByRole('option', { name: 'gpt-a' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'gpt-b' })).toBeInTheDocument();
+    expect(screen.getByText('Loaded 2 models.')).toBeInTheDocument();
+  });
+
+  it('refreshes models when Refresh Models is clicked', async () => {
+    vi.mocked(fetchAiModels)
+      .mockResolvedValueOnce(['first-model'])
+      .mockResolvedValueOnce(['second-model']);
+    saveAiSettings({ apiKey: 'saved-key', model: 'first-model' });
+
+    render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
+    expect(await screen.findByRole('option', { name: 'first-model' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh Models' }));
+
+    expect(await screen.findByRole('option', { name: 'second-model' })).toBeInTheDocument();
+    expect(fetchAiModels).toHaveBeenCalledTimes(2);
+  });
+
+  it('saves a selected fetched model', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchAiModels).mockResolvedValue(['gpt-a', 'gpt-b']);
+    saveAiSettings({ apiKey: 'saved-key', model: 'gpt-a' });
+
+    render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
+    await screen.findByRole('option', { name: 'gpt-b' });
+
+    await user.selectOptions(screen.getByLabelText('Model'), 'gpt-b');
+
+    expect(loadAiSettings().model).toBe('gpt-b');
+  });
+
+  it('saves a custom model typed by the user', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchAiModels).mockResolvedValue(['gpt-a']);
+    saveAiSettings({ apiKey: 'saved-key', model: 'gpt-a' });
+
+    render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
+    await screen.findByRole('option', { name: 'gpt-a' });
+
+    await user.clear(screen.getByLabelText('Custom model'));
+    await user.type(screen.getByLabelText('Custom model'), 'local-custom');
+
+    expect(loadAiSettings().model).toBe('local-custom');
+  });
+
+  it('keeps the current custom model visible when it is absent from fetched models', async () => {
+    vi.mocked(fetchAiModels).mockResolvedValue(['gpt-a']);
+    saveAiSettings({ apiKey: 'saved-key', model: 'local-custom' });
+
+    render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
+
+    expect(await screen.findByRole('option', { name: 'local-custom (custom)' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Model')).toHaveValue('local-custom');
+  });
+
+  it('shows model load errors while leaving custom model editable', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchAiModels).mockRejectedValue(new Error('Model list request failed with status 401.'));
+    saveAiSettings({ apiKey: 'saved-key', model: 'existing-model' });
+
+    render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
+
+    expect(await screen.findByText('Model list request failed with status 401.')).toBeInTheDocument();
+    await user.clear(screen.getByLabelText('Custom model'));
+    await user.type(screen.getByLabelText('Custom model'), 'manual-after-error');
+
+    expect(loadAiSettings().model).toBe('manual-after-error');
   });
 });
