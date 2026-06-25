@@ -26,7 +26,10 @@ function clampExampleCount(value: unknown): number {
 
 function cleanBaseUrl(value: unknown): string {
   const raw = typeof value === 'string' ? value.trim() : DEFAULT_AI_SETTINGS.baseUrl;
-  return raw.replace(/\/+$/, '') || DEFAULT_AI_SETTINGS.baseUrl;
+  if (/^[a-z][a-z0-9+.-]*:\/?\/?$/i.test(raw)) {
+    return raw;
+  }
+  return raw.replace(/\/{2,}$/, '');
 }
 
 function cleanText(value: unknown, fallback: string): string {
@@ -38,10 +41,8 @@ export function normalizeAiSettings(settings: Partial<AiSettings>): AiSettings {
     enabled: Boolean(settings.enabled),
     baseUrl: cleanBaseUrl(settings.baseUrl),
     apiKey: cleanText(settings.apiKey, DEFAULT_AI_SETTINGS.apiKey),
-    model: cleanText(settings.model, DEFAULT_AI_SETTINGS.model) || DEFAULT_AI_SETTINGS.model,
-    outputLanguage:
-      cleanText(settings.outputLanguage, DEFAULT_AI_SETTINGS.outputLanguage) ||
-      DEFAULT_AI_SETTINGS.outputLanguage,
+    model: cleanText(settings.model, DEFAULT_AI_SETTINGS.model),
+    outputLanguage: cleanText(settings.outputLanguage, DEFAULT_AI_SETTINGS.outputLanguage),
     exampleCount: clampExampleCount(settings.exampleCount),
   };
 }
