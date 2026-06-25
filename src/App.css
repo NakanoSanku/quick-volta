@@ -1566,3 +1566,41 @@
 .settings-field-row .form-input {
   max-width: 58%;
 }
+
+.ai-generate-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ai-generate-btn {
+  width: 100%;
+  min-height: 42px;
+  border-color: rgba(139, 92, 246, 0.3);
+  color: var(--primary);
+  background: rgba(139, 92, 246, 0.06);
+}
+
+.ai-generate-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.ai-generate-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ai-feedback {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ai-feedback-error {
+  color: var(--danger);
+}
+
+.ai-feedback-success {
+  color: var(--success);
+}
