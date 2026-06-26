@@ -1,5 +1,6 @@
 ﻿import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  AI_BASE_URL_PROVIDERS,
   AI_SETTINGS_STORAGE_KEY,
   DEFAULT_AI_SETTINGS,
   DEFAULT_CARD_GENERATION_PROMPT,
@@ -13,6 +14,15 @@ describe('aiSettings', () => {
 
   it('loads default settings when local storage is empty', () => {
     expect(loadAiSettings()).toEqual(DEFAULT_AI_SETTINGS);
+  });
+
+  it('provides built-in OpenAI-compatible base URL presets', () => {
+    expect(AI_BASE_URL_PROVIDERS).toEqual([
+      { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1' },
+      { label: 'Groq', baseUrl: 'https://api.groq.com/openai/v1' },
+      { label: 'Cerebras', baseUrl: 'https://api.cerebras.ai/v1' },
+    ]);
+    expect(DEFAULT_AI_SETTINGS.baseUrl).toBe(AI_BASE_URL_PROVIDERS[0].baseUrl);
   });
 
   it('persists edited settings to local storage', () => {

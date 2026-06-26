@@ -1815,7 +1815,7 @@
 }
 
 .settings-collapsible-content.expanded {
-  max-height: 900px;
+  max-height: 1100px;
   opacity: 1;
   margin-top: 14px;
   overflow: visible;
@@ -1867,6 +1867,39 @@
 
 .settings-input-wrapper:focus-within .settings-input-icon-left {
   color: var(--primary);
+}
+
+.settings-provider-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.settings-provider-chip {
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 11px;
+  transition: all 0.2s;
+}
+
+.settings-provider-chip:hover {
+  border-color: var(--primary);
+  color: var(--text-primary);
+  background: var(--glass-bg-hover);
+  transform: translateY(-1px);
+}
+
+.settings-provider-chip.active {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.22);
 }
 
 /* Action button inside input (e.g. eye toggle) */

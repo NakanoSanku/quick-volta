@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Upload, Download, Info, Check, AlertTriangle, Sparkles, Globe, Key, Cpu, Sliders, Hash, RefreshCw, Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react';
 import { type Card } from '../services/cardRepository';
 import { useCsvImportExport } from '../hooks/useCsvImportExport';
-import { DEFAULT_CARD_GENERATION_PROMPT, loadAiSettings, saveAiSettings, type AiSettings } from '../services/aiSettings';
+import { AI_BASE_URL_PROVIDERS, DEFAULT_CARD_GENERATION_PROMPT, loadAiSettings, saveAiSettings, type AiSettings } from '../services/aiSettings';
 import { fetchAiModels } from '../services/aiModels';
 import type { CurrentUser } from '../services/auth';
 import { createLineBindingCode, getLineReminderStatus, sendLineTestMessage, unlinkLineConnection, updateReminderSettings, type LineStatusDto, type ReminderSettingsDto } from '../services/lineReminderApi';
@@ -341,6 +341,19 @@ export function Settings({ cards, onImportSuccess, currentUser, onLogout }: Sett
                   onChange={(e) => updateAiSettings({ baseUrl: e.target.value })}
                   aria-label="Base URL"
                 />
+              </div>
+              <div className="settings-provider-presets" aria-label="Base URL providers">
+                {AI_BASE_URL_PROVIDERS.map((provider) => (
+                  <button
+                    key={provider.label}
+                    type="button"
+                    className={`settings-provider-chip ${aiSettings.baseUrl === provider.baseUrl ? 'active' : ''}`}
+                    onClick={() => updateAiSettings({ baseUrl: provider.baseUrl })}
+                    aria-pressed={aiSettings.baseUrl === provider.baseUrl}
+                  >
+                    {provider.label}
+                  </button>
+                ))}
               </div>
             </div>
 

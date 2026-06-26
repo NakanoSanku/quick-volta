@@ -20,6 +20,8 @@ describe('AI settings UI', () => {
     expect(screen.getByRole('heading', { name: 'AI Generation' })).toBeInTheDocument();
     expect(screen.getByLabelText('Enable AI Generation')).not.toBeChecked();
     expect(screen.getByLabelText('Base URL')).toHaveValue('https://api.openai.com/v1');
+    expect(screen.getByRole('button', { name: 'Groq' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cerebras' })).toBeInTheDocument();
     expect(screen.getByLabelText('Model')).toHaveValue('gpt-4.1-mini');
     expect(screen.getByLabelText('Output Language')).toHaveValue('中文');
     expect(screen.getByLabelText('Example Count')).toHaveValue(1);
@@ -48,6 +50,19 @@ describe('AI settings UI', () => {
       exampleCount: 3,
       cardGenerationPrompt: DEFAULT_CARD_GENERATION_PROMPT,
     });
+  });
+
+  it('applies built-in base URL provider presets', async () => {
+    const user = userEvent.setup();
+    render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: 'Groq' }));
+    expect(screen.getByLabelText('Base URL')).toHaveValue('https://api.groq.com/openai/v1');
+    expect(loadAiSettings().baseUrl).toBe('https://api.groq.com/openai/v1');
+
+    await user.click(screen.getByRole('button', { name: 'Cerebras' }));
+    expect(screen.getByLabelText('Base URL')).toHaveValue('https://api.cerebras.ai/v1');
+    expect(loadAiSettings().baseUrl).toBe('https://api.cerebras.ai/v1');
   });
 
   it('persists edited card generation prompt text', async () => {

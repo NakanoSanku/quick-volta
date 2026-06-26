@@ -23,9 +23,15 @@ export interface AiSettings {
   cardGenerationPrompt: string;
 }
 
+export const AI_BASE_URL_PROVIDERS = [
+  { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1' },
+  { label: 'Groq', baseUrl: 'https://api.groq.com/openai/v1' },
+  { label: 'Cerebras', baseUrl: 'https://api.cerebras.ai/v1' },
+] as const;
+
 export const DEFAULT_AI_SETTINGS: AiSettings = {
   enabled: false,
-  baseUrl: 'https://api.openai.com/v1',
+  baseUrl: AI_BASE_URL_PROVIDERS[0].baseUrl,
   apiKey: '',
   model: 'gpt-4.1-mini',
   outputLanguage: '中文',
