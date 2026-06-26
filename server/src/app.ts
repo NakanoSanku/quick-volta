@@ -7,6 +7,7 @@ import { authRoutes } from './routes/auth.js';
 import { cardsRoutes } from './routes/cards.js';
 import { reviewStatsRoutes } from './routes/reviewStats.js';
 import { importLocalDataRoutes } from './routes/importLocalData.js';
+import { lineRoutes } from './routes/line.js';
 
 export interface BuildAppOptions {
   config: ServerConfig;
@@ -22,6 +23,7 @@ export function buildApp({ config }: BuildAppOptions) {
   void app.register(cardsRoutes);
   void app.register(reviewStatsRoutes);
   void app.register(importLocalDataRoutes);
+  void app.register(lineRoutes, config);
 
   app.get('/api/health', async () => ({ ok: true }));
 
