@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Upload, Download, Info, Check, AlertTriangle, Database, Sparkles, Globe, Key, Cpu, Sliders, Hash, RefreshCw, Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react';
+import { Upload, Download, Info, Check, AlertTriangle, Sparkles, Globe, Key, Cpu, Sliders, Hash, RefreshCw, Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react';
 import { type Card } from '../services/cardRepository';
 import { useCsvImportExport } from '../hooks/useCsvImportExport';
 import { DEFAULT_CARD_GENERATION_PROMPT, loadAiSettings, saveAiSettings, type AiSettings } from '../services/aiSettings';
 import { fetchAiModels } from '../services/aiModels';
 import type { CurrentUser } from '../services/auth';
-import { getLocalMigrationSummary, uploadLocalBrowserData, type LocalMigrationSummary } from '../services/localDataMigration';
 import { createLineBindingCode, getLineReminderStatus, sendLineTestMessage, unlinkLineConnection, updateReminderSettings, type LineStatusDto, type ReminderSettingsDto } from '../services/lineReminderApi';
 
 const LANGUAGE_OPTIONS = [
@@ -38,13 +37,12 @@ export function Settings({ cards, onImportSuccess, currentUser, onLogout }: Sett
   const langDropdownRef = useRef<HTMLDivElement>(null);
   const [modelSearchQuery, setModelSearchQuery] = useState('');
   const [langSearchQuery, setLangSearchQuery] = useState('');
-  const [localSummary, setLocalSummary] = useState<LocalMigrationSummary>({ cardCount: 0, reviewStatsCount: 0 });
-  const [migrationMessage, setMigrationMessage] = useState('');
-  const [migrationLoading, setMigrationLoading] = useState(false);
   const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const [lineStatus, setLineStatus] = useState<LineStatusDto | null>(null);
   const [lineCode, setLineCode] = useState<{ code: string; expiresAt: string; botAddFriendUrl: string } | null>(null);
   const [lineMessage, setLineMessage] = useState('');
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
   const modelSearchInputRef = useRef<HTMLInputElement>(null);
   const langSearchInputRef = useRef<HTMLInputElement>(null);
 
@@ -188,25 +186,6 @@ export function Settings({ cards, onImportSuccess, currentUser, onLogout }: Sett
     return modelOptions.filter(opt => opt.label.toLowerCase().includes(query) || opt.value.toLowerCase().includes(query));
   }, [modelOptions, modelSearchQuery]);
 
-  useEffect(() => {
-    void getLocalMigrationSummary()
-      .then(setLocalSummary)
-      .catch(() => setLocalSummary({ cardCount: 0, reviewStatsCount: 0 }));
-  }, []);
-
-  const handleUploadLocalData = async () => {
-    setMigrationLoading(true);
-    setMigrationMessage('');
-    try {
-      const result = await uploadLocalBrowserData();
-      setMigrationMessage(`Imported ${result.importedCards} cards and ${result.importedReviewStats} review stats.`);
-      onImportSuccess();
-    } catch (err) {
-      setMigrationMessage(err instanceof Error ? err.message : 'Failed to upload local data.');
-    } finally {
-      setMigrationLoading(false);
-    }
-  };
 
   const loadLineStatus = useCallback(async () => {
     try {
@@ -250,6 +229,19 @@ export function Settings({ cards, onImportSuccess, currentUser, onLogout }: Sett
     await unlinkLineConnection();
     setLineCode(null);
     await loadLineStatus();
+  };
+
+  const handleSignOut = async () => {
+    if (!onLogout || logoutLoading) return;
+
+    setLogoutLoading(true);
+    setLogoutError('');
+    try {
+      await onLogout();
+    } catch (err) {
+      setLogoutError(err instanceof Error ? err.message : 'Failed to sign out.');
+      setLogoutLoading(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -299,39 +291,15 @@ export function Settings({ cards, onImportSuccess, currentUser, onLogout }: Sett
             {currentUser ? `Signed in as ${currentUser.email}` : 'Signed in'}
           </p>
           {onLogout && (
-            <button className="btn btn-secondary" onClick={() => void onLogout()}>
-              Sign out
-            </button>
+            <>
+              <button className="btn btn-secondary" onClick={() => void handleSignOut()} disabled={logoutLoading}>
+                {logoutLoading ? 'Signing out...' : 'Sign out'}
+              </button>
+              {logoutError && <div className="error-banner">{logoutError}</div>}
+            </>
           )}
         </div>
 
-        {localSummary.cardCount > 0 && (
-          <div className="settings-section">
-            <h2 style={{ fontSize: '16px', fontWeight: 600 }}>Migrate local data to account</h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              This browser has {localSummary.cardCount} local cards and {localSummary.reviewStatsCount} review stats. Upload them to your signed-in account.
-            </p>
-            <button className="btn btn-primary" onClick={handleUploadLocalData} disabled={migrationLoading}>
-              {migrationLoading ? 'Uploading...' : 'Upload local data'}
-            </button>
-            {migrationMessage && <div className="settings-info-box">{migrationMessage}</div>}
-          </div>
-        )}
-
-        {/* local storage warning */}
-        <div className="settings-section">
-          <h2 style={{ fontSize: '16px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Database size={18} className="empty-state-icon" />
-            Local-First Storage
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-            Your flashcard data is stored securely and directly in your browser's local database (IndexedDB). It is offline-first and never leaves your device.
-          </p>
-          <div className="settings-info-box">
-            <Info size={16} style={{ float: 'left', marginRight: '8px', color: 'var(--secondary)' }} />
-            <strong>Important:</strong> Clearing your browser data, website storage, or using private browsing mode can delete this database. Please make regular CSV backups to secure your data.
-          </div>
-        </div>
 
         {/* AI Generation */}
         <div className="settings-section settings-card-ai">

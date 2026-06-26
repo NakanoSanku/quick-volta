@@ -248,13 +248,14 @@ export function CardForm({ card, existingTags, onSave, onCancel }: CardFormProps
   return (
     <>
       <div className="top-header">
-        <div className="header-title-row">
+        <div className="header-title-row header-title-row-centered">
           <button className="header-action-btn" onClick={onCancel} title="Go Back">
             <ChevronLeft size={20} />
           </button>
-          <h1 className="header-title" style={{ marginRight: 'auto', marginLeft: '12px' }}>
+          <h1 className="header-title header-title-centered">
             {card ? 'Edit Card' : 'Add Card'}
           </h1>
+          <div className="header-spacer" />
         </div>
       </div>
 

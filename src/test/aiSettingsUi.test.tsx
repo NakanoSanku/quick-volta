@@ -2,7 +2,7 @@
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Settings } from '../components/Settings';
-import { loadAiSettings, saveAiSettings } from '../services/aiSettings';
+import { DEFAULT_CARD_GENERATION_PROMPT, loadAiSettings, saveAiSettings } from '../services/aiSettings';
 import { fetchAiModels } from '../services/aiModels';
 
 vi.mock('../services/aiModels', () => ({
@@ -23,6 +23,7 @@ describe('AI settings UI', () => {
     expect(screen.getByLabelText('Model')).toHaveValue('gpt-4.1-mini');
     expect(screen.getByLabelText('Output Language')).toHaveValue('中文');
     expect(screen.getByLabelText('Example Count')).toHaveValue(1);
+    expect(screen.getByLabelText('Card generation prompt')).toHaveValue(DEFAULT_CARD_GENERATION_PROMPT);
   });
 
   it('persists edited AI settings', async () => {
@@ -45,7 +46,32 @@ describe('AI settings UI', () => {
       model: 'local-model',
       outputLanguage: 'English',
       exampleCount: 3,
+      cardGenerationPrompt: DEFAULT_CARD_GENERATION_PROMPT,
     });
+  });
+
+  it('persists edited card generation prompt text', async () => {
+    const user = userEvent.setup();
+    render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
+    const customPrompt = 'Custom prompt for {term} in {outputLanguage} with {examplePhrase}';
+
+    const promptInput = screen.getByLabelText('Card generation prompt');
+    await user.clear(promptInput);
+    await user.click(promptInput);
+    await user.paste(customPrompt);
+
+    expect(loadAiSettings().cardGenerationPrompt).toBe(customPrompt);
+  });
+
+  it('resets the card generation prompt to the built-in default', async () => {
+    const user = userEvent.setup();
+    saveAiSettings({ cardGenerationPrompt: 'Custom prompt for {term}' });
+    render(<Settings cards={[]} onImportSuccess={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: 'Reset Prompt' }));
+
+    expect(screen.getByLabelText('Card generation prompt')).toHaveValue(DEFAULT_CARD_GENERATION_PROMPT);
+    expect(loadAiSettings().cardGenerationPrompt).toBe(DEFAULT_CARD_GENERATION_PROMPT);
   });
 
   it('loads previously saved settings', () => {

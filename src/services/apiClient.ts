@@ -9,13 +9,15 @@ export class ApiError extends Error {
 }
 
 export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers: HeadersInit = {
+    ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    ...(init.headers ?? {}),
+  };
+
   const response = await fetch(path, {
     ...init,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init.headers ?? {}),
-    },
+    headers,
   });
 
   if (!response.ok) {

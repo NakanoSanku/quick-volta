@@ -31,6 +31,10 @@ function cleanString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function removeChineseFullStops(value: string): string {
+  return value.replace(/。/g, '').trim();
+}
+
 function cleanStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => cleanString(item)).filter((item) => item.length > 0);
@@ -48,26 +52,32 @@ function parseGeneratedInfo(content: string): GeneratedCardInfo {
   if (!meaning) throw new AiGenerationError('AI response did not include a meaning.');
 
   return {
-    meaning,
+    meaning: removeChineseFullStops(meaning),
     partOfSpeech: normalizePartOfSpeech(cleanString(parsed.partOfSpeech)),
-    examples: cleanStringArray(parsed.examples),
-    notes: cleanString(parsed.notes),
-    tags: cleanStringArray(parsed.tags).map((tag) => tag.toLowerCase()),
+    examples: cleanStringArray(parsed.examples).map(removeChineseFullStops),
+    notes: removeChineseFullStops(cleanString(parsed.notes)),
+    tags: cleanStringArray(parsed.tags),
   };
 }
 
-function buildPrompt(term: string, settings: AiSettings): string {
+function interpolatePromptTemplate(template: string, term: string, settings: AiSettings): string {
   const examplePhrase =
     settings.exampleCount === 1 ? '1 example sentence' : `${settings.exampleCount} example sentences`;
-  return [
-    `Generate flashcard information for this term or phrase: "${term}".`,
-    `Use ${settings.outputLanguage} for meaning and notes.`,
-    `Return exactly ${examplePhrase}.`,
-    'Return concise flashcard-ready content.',
-    'Return JSON only with keys: meaning, partOfSpeech, examples, notes, tags.',
-    'partOfSpeech must be one of: n., v., adj., adv., pron., prep., conj., det., art., aux., modal., num., interj., abbr., phr., idiom., prefix., suffix., or empty.',
-    'examples must be an array of strings. tags must be short lowercase strings.',
-  ].join('\n');
+  const placeholders: Record<string, string> = {
+    term,
+    outputLanguage: settings.outputLanguage,
+    exampleCount: String(settings.exampleCount),
+    examplePhrase,
+  };
+
+  return Object.entries(placeholders).reduce(
+    (prompt, [key, value]) => prompt.split(`{${key}}`).join(value),
+    template,
+  );
+}
+
+function buildPrompt(term: string, settings: AiSettings): string {
+  return interpolatePromptTemplate(settings.cardGenerationPrompt, term, settings);
 }
 
 export async function generateCardInfo(term: string): Promise<GeneratedCardInfo> {

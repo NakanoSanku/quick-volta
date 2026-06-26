@@ -1,0 +1,16 @@
+node_modules
+server/node_modules
+dist
+server/dist
+.git
+.gitignore
+.env
+.env.*.local
+.postgres-data
+logs
+*.log
+.vite-dev*.log
+.superpowers
+Dockerfile*
+docker-compose*.yml
+README.md

@@ -9,17 +9,13 @@ import { Settings } from './components/Settings';
 import { type Card } from './services/cardRepository';
 import type { PartOfSpeech } from './services/partOfSpeech';
 import { AuthGate } from './components/AuthGate';
-import { logout, type CurrentUser } from './services/auth';
+import { type CurrentUser } from './services/auth';
 import './App.css';
 
 type Tab = 'cards' | 'review' | 'settings';
 type SubScreen = 'list' | 'detail' | 'form';
 
-function AuthenticatedApp({ user }: { user: CurrentUser }) {
-  const handleLogout = async () => {
-    await logout();
-    window.location.reload();
-  };
+function AuthenticatedApp({ user, onLogout }: { user: CurrentUser; onLogout: () => Promise<void> }) {
   const {
     cards,
     filteredCards,
@@ -34,6 +30,7 @@ function AuthenticatedApp({ user }: { user: CurrentUser }) {
     addCard,
     updateCard,
     deleteCard,
+    applyReviewStats,
     refreshCards,
   } = useCards();
 
@@ -119,6 +116,7 @@ function AuthenticatedApp({ user }: { user: CurrentUser }) {
         <ReviewSession
           cardsToReview={reviewCards}
           onExit={() => handleTabChange('cards')}
+          onStatsSaved={applyReviewStats}
         />
       );
     }
@@ -129,7 +127,7 @@ function AuthenticatedApp({ user }: { user: CurrentUser }) {
           cards={cards}
           onImportSuccess={refreshCards}
           currentUser={user}
-          onLogout={handleLogout}
+          onLogout={onLogout}
         />
       );
     }
@@ -137,14 +135,18 @@ function AuthenticatedApp({ user }: { user: CurrentUser }) {
     // Tab is 'cards'
     switch (subScreen) {
       case 'detail':
-        return selectedCardId ? (
+        if (!selectedCardId) return null;
+
+        return (
           <CardDetail
             cardId={selectedCardId}
+            initialCard={cards.find((card) => card.id === selectedCardId) ?? null}
+            initialStats={cardStats[selectedCardId] ?? null}
             onBack={() => setSubScreen('list')}
             onEdit={handleEditCardClick}
             onDelete={handleDeleteCard}
           />
-        ) : null;
+        );
 
       case 'form':
         return (
@@ -210,6 +212,6 @@ function AuthenticatedApp({ user }: { user: CurrentUser }) {
 }
 
 export default function App() {
-  return <AuthGate>{({ user }) => <AuthenticatedApp user={user} />}</AuthGate>;
+  return <AuthGate>{({ user, onLogout }) => <AuthenticatedApp user={user} onLogout={onLogout} />}</AuthGate>;
 }
 

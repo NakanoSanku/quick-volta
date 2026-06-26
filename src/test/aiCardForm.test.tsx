@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CardForm } from '../components/CardForm';
 import { generateCardInfo } from '../services/aiCardGenerator';
+import { saveAiSettings } from '../services/aiSettings';
 
 vi.mock('../services/aiCardGenerator', () => ({ generateCardInfo: vi.fn() }));
 
@@ -42,6 +43,27 @@ describe('CardForm AI generation', () => {
     expect(notesInput()).toHaveValue('Common phrasal verb.');
     expect(screen.getByText('phrasal verb')).toBeInTheDocument();
     expect(generateCardInfo).toHaveBeenCalledWith('make up');
+  });
+
+  it('keeps AI generated tags in the configured output language without adding English language tags', async () => {
+    const user = userEvent.setup();
+    saveAiSettings({ outputLanguage: '中文' });
+    vi.mocked(generateCardInfo).mockResolvedValue({
+      meaning: '敏捷的',
+      partOfSpeech: 'adj.',
+      examples: ['这只猫很敏捷'],
+      notes: '常用于描述动作灵活',
+      tags: ['形容词', '速度'],
+    });
+
+    render(<CardForm existingTags={[]} onSave={vi.fn()} onCancel={vi.fn()} />);
+    await user.type(termInput(), 'nimble');
+    await user.click(screen.getByRole('button', { name: 'AI Generate' }));
+
+    await waitFor(() => expect(meaningInput()).toHaveValue('敏捷的'));
+    expect(screen.getByText('形容词')).toBeInTheDocument();
+    expect(screen.getByText('速度')).toBeInTheDocument();
+    expect(screen.queryByText('chinese')).not.toBeInTheDocument();
   });
 
   it('does not overwrite non-empty user fields', async () => {

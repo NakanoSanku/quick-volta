@@ -8,10 +8,6 @@ vi.mock('../services/lineReminderApi');
 vi.mock('../hooks/useCsvImportExport', () => ({
   useCsvImportExport: () => ({ parseAndPreviewCsv: vi.fn(), previewRows: [], clearPreview: vi.fn(), confirmImport: vi.fn(), exportToCsv: vi.fn(), errorMsg: '', hasErrors: false, totalCount: 0, validCount: 0 }),
 }));
-vi.mock('../services/localDataMigration', () => ({
-  getLocalMigrationSummary: vi.fn().mockResolvedValue({ cardCount: 0, reviewStatsCount: 0 }),
-  uploadLocalBrowserData: vi.fn(),
-}));
 
 describe('LINE reminder Settings UI', () => {
   beforeEach(() => {

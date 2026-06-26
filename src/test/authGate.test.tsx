@@ -9,7 +9,7 @@ vi.mock('../services/auth', () => ({
   logout: vi.fn(),
 }));
 
-import { getCurrentUser, loginWithGoogle } from '../services/auth';
+import { getCurrentUser, loginWithGoogle, logout } from '../services/auth';
 
 describe('AuthGate', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -28,5 +28,27 @@ describe('AuthGate', () => {
     render(<AuthGate>{({ user }) => <div>Welcome {user.email}</div>}</AuthGate>);
 
     await waitFor(() => expect(screen.getByText('Welcome me@example.com')).toBeInTheDocument());
+  });
+
+  it('signs out and returns to the sign-in screen without relying on a page reload', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({ authenticated: true, user: { id: 'user-1', email: 'me@example.com', name: 'Me', avatarUrl: null } });
+    vi.mocked(logout).mockResolvedValue(undefined);
+
+    render(
+      <AuthGate>
+        {({ user, onLogout }) => (
+          <div>
+            <div>Welcome {user.email}</div>
+            <button onClick={() => void onLogout()}>Sign out</button>
+          </div>
+        )}
+      </AuthGate>,
+    );
+
+    await waitFor(() => expect(screen.getByText('Welcome me@example.com')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+
+    await waitFor(() => expect(logout).toHaveBeenCalled());
+    expect(await screen.findByRole('button', { name: 'Sign in with Google' })).toBeInTheDocument();
   });
 });
