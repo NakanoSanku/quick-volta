@@ -6,6 +6,7 @@ import { DEFAULT_CARD_GENERATION_PROMPT, loadAiSettings, saveAiSettings, type Ai
 import { fetchAiModels } from '../services/aiModels';
 import type { CurrentUser } from '../services/auth';
 import { getLocalMigrationSummary, uploadLocalBrowserData, type LocalMigrationSummary } from '../services/localDataMigration';
+import { createLineBindingCode, getLineReminderStatus, sendLineTestMessage, unlinkLineConnection, updateReminderSettings, type LineStatusDto, type ReminderSettingsDto } from '../services/lineReminderApi';
 
 const LANGUAGE_OPTIONS = [
   { value: '中文', label: '中文 (Chinese)' },
@@ -40,6 +41,10 @@ export function Settings({ cards, onImportSuccess, currentUser, onLogout }: Sett
   const [localSummary, setLocalSummary] = useState<LocalMigrationSummary>({ cardCount: 0, reviewStatsCount: 0 });
   const [migrationMessage, setMigrationMessage] = useState('');
   const [migrationLoading, setMigrationLoading] = useState(false);
+  const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const [lineStatus, setLineStatus] = useState<LineStatusDto | null>(null);
+  const [lineCode, setLineCode] = useState<{ code: string; expiresAt: string; botAddFriendUrl: string } | null>(null);
+  const [lineMessage, setLineMessage] = useState('');
   const modelSearchInputRef = useRef<HTMLInputElement>(null);
   const langSearchInputRef = useRef<HTMLInputElement>(null);
 
@@ -201,6 +206,50 @@ export function Settings({ cards, onImportSuccess, currentUser, onLogout }: Sett
     } finally {
       setMigrationLoading(false);
     }
+  };
+
+  const loadLineStatus = useCallback(async () => {
+    try {
+      setLineStatus(await getLineReminderStatus());
+    } catch (err) {
+      setLineMessage(err instanceof Error ? err.message : 'Failed to load LINE status.');
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadLineStatus();
+  }, [loadLineStatus]);
+
+  const handleCreateLineCode = async () => {
+    const code = await createLineBindingCode();
+    setLineCode(code);
+    setLineMessage('Send this code to the Quick Volta LINE bot.');
+  };
+
+  const handleReminderPatch = async (patch: Partial<Pick<ReminderSettingsDto, 'enabled' | 'timezone' | 'remindHour'>>) => {
+    if (!lineStatus) return;
+    const current = lineStatus.reminderSettings;
+    const next = await updateReminderSettings({
+      enabled: patch.enabled ?? current.enabled,
+      timezone: patch.timezone ?? current.timezone ?? browserTimezone,
+      remindHour: patch.remindHour ?? current.remindHour,
+    });
+    setLineStatus({ ...lineStatus, reminderSettings: next });
+  };
+
+  const handleSendLineTestMessage = async () => {
+    try {
+      await sendLineTestMessage();
+      setLineMessage('LINE test message sent.');
+    } catch (err) {
+      setLineMessage(err instanceof Error ? err.message : 'Failed to send LINE test message.');
+    }
+  };
+
+  const handleUnlinkLine = async () => {
+    await unlinkLineConnection();
+    setLineCode(null);
+    await loadLineStatus();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -618,6 +667,53 @@ export function Settings({ cards, onImportSuccess, currentUser, onLogout }: Sett
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="settings-section">
+          <h2 style={{ fontSize: '16px', fontWeight: 600 }}>LINE Reminders</h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Connect the Quick Volta LINE bot to receive one daily reminder when cards are due.
+          </p>
+          <div className="settings-info-box">
+            Status: {lineStatus?.connection.bound ? 'Bound' : 'Not bound'}
+          </div>
+          {!lineStatus?.connection.bound && (
+            <button className="btn btn-primary" onClick={() => void handleCreateLineCode()} aria-label="Generate LINE binding code">
+              Generate LINE binding code
+            </button>
+          )}
+          {lineCode && (
+            <div className="settings-info-box">
+              <strong>{lineCode.code}</strong>
+              <p>Add the LINE Official Account, then send this code as a message. Expires at {new Date(lineCode.expiresAt).toLocaleString()}.</p>
+              <a href={lineCode.botAddFriendUrl} target="_blank" rel="noreferrer">Add LINE bot</a>
+            </div>
+          )}
+          {lineStatus?.connection.bound && (
+            <div className="line-reminder-controls">
+              <button className="btn btn-secondary" onClick={() => void handleSendLineTestMessage()} aria-label="Send LINE test message">Send LINE test message</button>
+              <button className="btn btn-secondary" onClick={() => void handleUnlinkLine()}>Unlink LINE</button>
+            </div>
+          )}
+          {lineStatus && (
+            <div className="line-reminder-controls">
+              <label className="settings-field-row">
+                <span>Enable LINE reminders</span>
+                <input type="checkbox" aria-label="Enable LINE reminders" checked={lineStatus.reminderSettings.enabled} onChange={(e) => void handleReminderPatch({ enabled: e.target.checked })} />
+              </label>
+              <label className="settings-field-row">
+                <span>Timezone</span>
+                <input className="form-input" value={lineStatus.reminderSettings.timezone || browserTimezone} onChange={(e) => void handleReminderPatch({ timezone: e.target.value })} aria-label="Reminder timezone" />
+              </label>
+              <label className="settings-field-row">
+                <span>Reminder hour</span>
+                <select className="form-input" value={lineStatus.reminderSettings.remindHour} onChange={(e) => void handleReminderPatch({ remindHour: Number(e.target.value) })} aria-label="Reminder hour">
+                  {Array.from({ length: 24 }, (_, hour) => <option key={hour} value={hour}>{hour}:00</option>)}
+                </select>
+              </label>
+            </div>
+          )}
+          {lineMessage && <div className="settings-info-box">{lineMessage}</div>}
         </div>
 
         {/* CSV Import / Export */}

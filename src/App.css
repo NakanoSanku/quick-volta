@@ -1995,3 +1995,10 @@
   box-shadow: var(--shadow-lg);
   text-align: center;
 }
+
+.line-reminder-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
