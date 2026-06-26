@@ -9,14 +9,17 @@ import { Settings } from './components/Settings';
 import { type Card } from './services/cardRepository';
 import type { PartOfSpeech } from './services/partOfSpeech';
 import { AuthGate } from './components/AuthGate';
-import type { CurrentUser } from './services/auth';
+import { logout, type CurrentUser } from './services/auth';
 import './App.css';
 
 type Tab = 'cards' | 'review' | 'settings';
 type SubScreen = 'list' | 'detail' | 'form';
 
 function AuthenticatedApp({ user }: { user: CurrentUser }) {
-  void user;
+  const handleLogout = async () => {
+    await logout();
+    window.location.reload();
+  };
   const {
     cards,
     filteredCards,
@@ -125,6 +128,8 @@ function AuthenticatedApp({ user }: { user: CurrentUser }) {
         <Settings
           cards={cards}
           onImportSuccess={refreshCards}
+          currentUser={user}
+          onLogout={handleLogout}
         />
       );
     }
