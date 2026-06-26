@@ -2,6 +2,8 @@
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import type { ServerConfig } from './config.js';
+import { authPlugin } from './plugins/auth.js';
+import { authRoutes } from './routes/auth.js';
 
 export interface BuildAppOptions {
   config: ServerConfig;
@@ -12,6 +14,8 @@ export function buildApp({ config }: BuildAppOptions) {
 
   void app.register(cookie, { secret: config.sessionSecret });
   void app.register(cors, { origin: config.appBaseUrl, credentials: true });
+  void app.register(authPlugin);
+  void app.register(authRoutes, config);
 
   app.get('/api/health', async () => ({ ok: true }));
 
