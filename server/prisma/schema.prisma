@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LineConnectionStatus {
+  active
+  unlinked
+  blocked
+}
+
+model User {
+  id        String   @id @default(uuid())
+  googleSub String   @unique
+  email     String
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions         Session[]
+  cards            Card[]
+  reviewStats      ReviewStats[]
+  lineConnection   LineConnection?
+  lineBindingCodes LineBindingCode[]
+  reminderSettings ReminderSettings?
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Card {
+  id           String    @id @default(uuid())
+  userId       String
+  term         String
+  meaning      String
+  partOfSpeech String?
+  examples     Json
+  notes        String    @default("")
+  tags         Json
+  source       String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewStats ReviewStats?
+
+  @@index([userId, deletedAt])
+  @@index([userId, updatedAt])
+}
+
+model ReviewStats {
+  cardId         String    @id
+  userId         String
+  reviewCount    Int       @default(0)
+  knownCount     Int       @default(0)
+  unknownCount   Int       @default(0)
+  lastReviewedAt DateTime?
+  interval       Int       @default(0)
+  easeFactor     Float     @default(2.5)
+  repetitions    Int       @default(0)
+  nextDueAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, nextDueAt])
+}
+
+model LineConnection {
+  id         String               @id @default(uuid())
+  userId     String               @unique
+  lineUserId String               @unique
+  status     LineConnectionStatus @default(active)
+  boundAt    DateTime             @default(now())
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LineBindingCode {
+  id        String    @id @default(uuid())
+  userId    String
+  code      String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@index([expiresAt])
+}
+
+model ReminderSettings {
+  userId     String   @id
+  enabled    Boolean  @default(false)
+  timezone   String   @default("UTC")
+  remindHour Int      @default(9)
+  lastSentOn String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
