@@ -1647,3 +1647,351 @@
 .ai-feedback-success {
   color: var(--success);
 }
+
+/* ==========================================================================
+   AI Settings Dashboard Optimization Styles
+   ========================================================================== */
+
+/* Main Card styling for AI settings */
+.settings-card-ai {
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.04);
+  transition: all 0.3s ease;
+}
+
+.settings-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.08);
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+}
+
+.settings-title-h2 {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.settings-header-icon {
+  color: var(--primary);
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.3));
+}
+
+.settings-toggle-row-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+/* Styled Switch Slider */
+.switch-container {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch-inner-checkbox {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
+}
+
+.switch-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
+.switch-slider {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.switch-inner-checkbox:checked + .switch-wrapper {
+  background-color: var(--primary);
+}
+
+.switch-inner-checkbox:checked + .switch-wrapper .switch-slider {
+  transform: translateX(20px);
+}
+
+/* Collapsible Content Area */
+.settings-collapsible-content {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, margin-top 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-collapsible-content.expanded {
+  max-height: 900px;
+  opacity: 1;
+  margin-top: 14px;
+  overflow: visible;
+}
+
+/* Form Groups (Stacked Layout) */
+.settings-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.settings-field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.settings-field-label-sub {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Input Fields with Icons */
+.settings-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.settings-input-icon-left {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.settings-input-with-icon {
+  padding-left: 36px !important;
+}
+
+.settings-input-with-action {
+  padding-right: 40px !important;
+}
+
+.settings-input-wrapper:focus-within .settings-input-icon-left {
+  color: var(--primary);
+}
+
+/* Action button inside input (e.g. eye toggle) */
+.settings-input-action-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.settings-input-action-btn:hover {
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Sub-card container (e.g. Model Configuration) */
+.settings-sub-card {
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(16, 185, 129, 0.08);
+  border-radius: var(--border-radius-sm);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-sub-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.settings-sub-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-sub-card-title svg {
+  color: var(--primary);
+}
+
+.btn-refresh-models {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh-models:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.btn-refresh-models:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-refresh-models:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spin animation */
+@keyframes spin-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.btn-refresh-models svg.spin {
+  animation: spin-rotate 1.2s linear infinite;
+}
+
+/* Status / Alert Badges */
+.settings-model-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  margin-top: 2px;
+  width: 100%;
+}
+
+.settings-model-status-badge.success {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.settings-model-status-badge.success .badge-dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--success);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--success);
+  flex-shrink: 0;
+}
+
+.settings-model-status-badge.error {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+.settings-model-status-badge.error .badge-dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--danger);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--danger);
+  flex-shrink: 0;
+}
+
+/* Grid layout for two items side by side */
+.settings-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Premium Info/Alert Notice */
+.settings-alert-box {
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  border-radius: var(--border-radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.settings-alert-box .alert-icon {
+  color: #6366f1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.settings-alert-box .alert-text {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--background);
+}
+
+.auth-card {
+  width: min(420px, 100%);
+  padding: 28px;
+  border-radius: 24px;
+  background: white;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
